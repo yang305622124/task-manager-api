@@ -31,6 +31,7 @@ pipeline {
             steps {
                 echo 'Testing... none'
                 sh 'pip install -r requirements.txt'
+                sh 'pip install httpx2'
                 sh 'cd src/task_manager_api/tests && pytest -v'
                 //echo "镜像: $image"
             }
