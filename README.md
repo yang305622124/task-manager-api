@@ -98,17 +98,169 @@ python main.py
 
 ---
 
-## API 接口一览
+## API 接口一览 & curl 测试命令
+
+> 以下示例默认基于 `http://127.0.0.1:8080`，请根据实际环境替换。
+
+### 1. 新增任务
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/task/create` | 新增任务 |
-| POST | `/api/v1/task/modify` | 修改任务 |
-| GET | `/api/v1/task/delete/physical` | 物理删除任务 |
-| GET | `/api/v1/task/getbyid` | 根据 ID 查询任务 |
-| GET | `/api/v1/task/getall` | 查询所有任务 |
-| POST | `/api/v1/task/get4page` | 分页查询任务 |
-| GET | `/api/v1/task/is_exist` | 字段唯一性校验 |
+| POST | `/api/v1/task/create` | 新增任务，标题不能为空且需唯一 |
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/v1/task/create \
+  -H "Content-Type: application/json" \
+  -d '{"title": "完成项目文档", "description": "编写 README.md", "status": "todo"}'
+```
+
+**成功响应（200）：**
+```json
+{
+  "code": 200,
+  "msg": "成功",
+  "task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "request_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+}
+```
+
+**失败响应（204）- 标题为空 / 标题重复：**
+```json
+{"code": 204, "msg": "任务标题不能为空", "task_id": "", "request_id": "..."}
+```
+
+---
+
+### 2. 修改任务
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/v1/task/modify` | 根据 ID 动态更新任务字段 |
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/v1/task/modify \
+  -H "Content-Type: application/json" \
+  -d '{"id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "title": "更新标题", "status": "in_progress"}'
+```
+
+**成功响应（200）：**
+```json
+{"code": 200, "msg": "成功", "request_id": "..."}
+```
+
+---
+
+### 3. 根据 ID 查询任务
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/v1/task/getbyid` | 根据任务 ID 查询单条数据 |
+
+```bash
+curl "http://127.0.0.1:8080/api/v1/task/getbyid?id=a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+**成功响应（200）：**
+```json
+{
+  "code": 200,
+  "msg": "成功",
+  "item": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "title": "完成项目文档",
+    "description": "编写 README.md",
+    "status": "todo",
+    "created_at": "2025-08-11T10:30:00",
+    "updated_at": null
+  },
+  "request_id": "..."
+}
+```
+
+---
+
+### 4. 查询所有任务
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/v1/task/getall` | 查询全部任务列表 |
+
+```bash
+curl http://127.0.0.1:8080/api/v1/task/getall
+```
+
+**成功响应（200）：**
+```json
+{
+  "code": 200,
+  "msg": "成功",
+  "items": [
+    {"id": "...", "title": "任务A", "description": null, "status": "todo", "created_at": "...", "updated_at": null}
+  ],
+  "request_id": "..."
+}
+```
+
+---
+
+### 5. 分页查询任务
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/v1/task/get4page` | 支持标题模糊搜索、状态筛选、时间范围过滤 |
+
+```bash
+curl -X POST http://127.0.0.1:8080/api/v1/task/get4page \
+  -H "Content-Type: application/json" \
+  -d '{"title": "文档", "status": "todo", "begin_time": "", "end_time": "", "page": 1, "page_size": 10}'
+```
+
+**成功响应（200）：**
+```json
+{
+  "code": 200,
+  "msg": "成功",
+  "total": 1,
+  "items": [
+    {"id": "...", "title": "完成项目文档", "description": "编写 README.md", "status": "todo", "created_at": "...", "updated_at": null}
+  ],
+  "request_id": "..."
+}
+```
+
+---
+
+### 6. 物理删除任务
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/v1/task/delete/physical` | 彻底删除任务数据，不可恢复 |
+
+```bash
+curl "http://127.0.0.1:8080/api/v1/task/delete/physical?id=a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+```
+
+**成功响应（200）：**
+```json
+{"code": 200, "msg": "物理删除成功", "request_id": "..."}
+```
+
+---
+
+### 7. 字段唯一性校验
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/v1/task/is_exist` | 校验指定字段值是否已存在 |
+
+```bash
+curl "http://127.0.0.1:8080/api/v1/task/is_exist?field=title&value=完成项目文档"
+```
+
+**成功响应（200）：**
+```json
+{"code": 200, "msg": "成功", "is_exist": true, "request_id": "..."}
+```
 
 ---
 
@@ -206,68 +358,35 @@ NAME                                           DESIRED   CURRENT   READY   AGE
 replicaset.apps/task-manager-api-6d8f7b6c4    1         1         1       5m
 ```
 
-### API 调用成功响应示例
-
-**创建任务** `POST /api/v1/task/create`
+### 快速验证流程（按顺序执行）
 
 ```bash
+# 1. 创建任务
 curl -X POST http://127.0.0.1:8080/api/v1/task/create \
   -H "Content-Type: application/json" \
   -d '{"title": "完成项目文档", "description": "编写 README.md", "status": "todo"}'
-```
 
-```json
-{
-  "code": 200,
-  "msg": "成功",
-  "task_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "request_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-}
-```
+# 2. 查询所有任务
+curl http://127.0.0.1:8080/api/v1/task/getall
 
-**查询任务** `GET /api/v1/task/getbyid?id=a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+# 3. 根据 ID 查询（替换为实际返回的 task_id）
+curl "http://127.0.0.1:8080/api/v1/task/getbyid?id=<task_id>"
 
-```json
-{
-  "code": 200,
-  "msg": "成功",
-  "item": {
-    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "title": "完成项目文档",
-    "description": "编写 README.md",
-    "status": "todo",
-    "created_at": "2025-08-11T10:30:00",
-    "updated_at": null
-  },
-  "request_id": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
+# 4. 修改任务
+curl -X POST http://127.0.0.1:8080/api/v1/task/modify \
+  -H "Content-Type: application/json" \
+  -d '{"id": "<task_id>", "status": "in_progress"}'
 
-**分页查询** `POST /api/v1/task/get4page`
-
-```bash
+# 5. 分页查询
 curl -X POST http://127.0.0.1:8080/api/v1/task/get4page \
   -H "Content-Type: application/json" \
-  -d '{"title": "文档", "status": "todo", "page": 1, "page_size": 10}'
-```
+  -d '{"page": 1, "page_size": 10}'
 
-```json
-{
-  "code": 200,
-  "msg": "成功",
-  "total": 1,
-  "items": [
-    {
-      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-      "title": "完成项目文档",
-      "description": "编写 README.md",
-      "status": "todo",
-      "created_at": "2025-08-11T10:30:00",
-      "updated_at": null
-    }
-  ],
-  "request_id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-}
+# 6. 唯一性校验
+curl "http://127.0.0.1:8080/api/v1/task/is_exist?field=title&value=完成项目文档"
+
+# 7. 删除任务
+curl "http://127.0.0.1:8080/api/v1/task/delete/physical?id=<task_id>"
 ```
 
 ---
