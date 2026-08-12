@@ -20,7 +20,7 @@ spec:
   #  - host: hz-dev-x86.imp.io
      - http:
         paths:
-          - path: //task-manager(/|$)(.*)
+          - path: /task-manager(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
