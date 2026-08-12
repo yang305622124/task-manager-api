@@ -6,17 +6,22 @@ metadata:
   labels:
     app: task-manager-api
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "500m"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
-  ingressClassName: nginx
+  #tls:
+  #  - hosts:
+  #    - hz-dev-x86.imp.io
+  #    - test-x86.imp.io
+  #    secretName: tls-orion-ingress.cattle-system
   rules:
-    #- host: task-manager.local
-    - http:
+  #  - host: hz-dev-x86.imp.io
+     - http:
         paths:
-          - path: /task-manager
-            pathType: Prefix
+          - path: //task-manager(/|$)(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: task-manager-api
