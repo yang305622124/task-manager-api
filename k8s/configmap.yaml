@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-manager-api
+  namespace: task-manager
+  labels:
+    app: task-manager-api
+data:
+  # 服务端口（默认 8080）
+  PORT: "8080"
+  # 日志级别：DEBUG / INFO / WARNING / ERROR / CRITICAL
+  LOG_LEVEL: "INFO"
+  # 数据库连接配置
+  DB_HOST: "mysql.task-manager.svc.cluster.local"
+  DB_PORT: "3306"
+  DB_NAME: "task-manager-api"
+  # Redis 连接配置
+  REDIS_HOST: "redis.task-manager.svc.cluster.local"
+  REDIS_PORT: "6379"

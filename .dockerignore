@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python 缓存
+__pycache__/
+*.py[codz]
+*.pyo
+.venv/
+venv/
+env/
+
+# 构建与分发
+build/
+dist/
+*.egg-info/
+*.egg
+
+# 测试与覆盖率
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Docker（避免递归复制）
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# 文档
+*.md
+LICENSE
+
+# k8s 配置
+k8s/
+
+# 环境配置
+.env
+.envrc
+
+# OS 文件
+.DS_Store
+Thumbs.db
