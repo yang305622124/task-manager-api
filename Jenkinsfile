@@ -25,6 +25,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Testing... none'
+                sh 'cd src/task_manager_api/tests && pytest -v'
                 //echo "镜像: $image"
             }
         }
