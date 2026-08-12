@@ -32,18 +32,19 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-          # 存活探针：检测容器是否运行
+          # 存活探针：通过 /health 端点检测容器是否运行
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health
               port: 8080
             initialDelaySeconds: 15
             periodSeconds: 20
             timeoutSeconds: 5
             failureThreshold: 3
-          # 就绪探针：检测是否可以接收流量
+          # 就绪探针：通过 /health 端点检测是否可以接收流量
           readinessProbe:
             httpGet:
-              path: /docs
+              path: /health
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10

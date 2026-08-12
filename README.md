@@ -13,6 +13,7 @@
 
 Task Manager API 提供完整的任务生命周期管理，包括：
 
+- **健康检查**：`GET /health` 服务状态检测，适配 K8s 探针
 - **任务创建**：支持标题唯一性校验
 - **任务修改**：动态字段更新
 - **任务删除**：物理删除
@@ -101,6 +102,28 @@ python main.py
 ## API 接口一览 & curl 测试命令
 
 > 以下示例默认基于 `http://127.0.0.1:8080`，请根据实际环境替换。
+
+### 0. 健康检查
+
+| 方法 | 路径 | 说明 | 响应状态码 |
+|---|---|---|---|
+| GET | `/health` | 健康检查端点，返回服务运行状态 | 200 |
+
+```bash
+curl http://127.0.0.1:8080/health
+```
+
+**响应示例（200）：**
+```json
+{
+  "status": "healthy",
+  "service": "task-manager-api"
+}
+```
+
+> 该接口常用于 Kubernetes 健康探针（livenessProbe / readinessProbe）、负载均衡器健康检测、CI/CD 部署验证等场景。
+
+---
 
 ### 1. 新增任务
 
@@ -287,6 +310,10 @@ docker run -d -p 9090:9090 -e PORT=9090 --name task-api task-manager-api:latest
 ### 验证服务
 
 ```bash
+# 健康检查
+curl http://127.0.0.1:8080/health
+
+# 查询任务列表
 curl http://127.0.0.1:8080/api/v1/task/getall
 ```
 
@@ -361,6 +388,9 @@ replicaset.apps/task-manager-api-6d8f7b6c4    1         1         1       5m
 ### 快速验证流程（按顺序执行）
 
 ```bash
+# 0. 健康检查
+curl http://127.0.0.1:8080/health
+
 # 1. 创建任务
 curl -X POST http://127.0.0.1:8080/api/v1/task/create \
   -H "Content-Type: application/json" \
@@ -399,6 +429,8 @@ task-manager-api/
 │   ├── fastapi2/                  # 框架核心（路由/数据库初始化/异常处理）
 │   ├── task_manager_api/
 │   │   ├── controllers/           # 控制器层（接口定义）
+│   │   │   ├── health_controller.py  # 健康检查
+│   │   │   └── task_controller.py    # 任务 CRUD
 │   │   ├── daos/                  # 数据访问层（CRUD 操作）
 │   │   ├── models/                # 模型层（ORM 映射）
 │   │   ├── sql/                   # SQL 建表脚本
