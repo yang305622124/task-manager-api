@@ -367,6 +367,82 @@ minikube tunnel
 
 ---
 
+## Jenkins CI/CD 工作流程
+
+### 流程概览
+
+```
+参数选择 → 单元测试 → Docker 构建 → 推送镜像 → K8s 部署
+```
+
+### 构建参数
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `X86` | Boolean | 是否制作 x86 架构镜像 |
+| `ARM64` | Boolean | 是否制作 arm64 架构镜像 |
+| `MANIFEST` | Boolean | 是否制作多架构镜像清单 |
+| `CLUSTERNAME` | Choice | 选择部署目标环境：`10.211.55.5` / `10.3.5.5` / `hz-dev-x86` / `hz-test-x86` / `hz-dev-arm64` |
+
+### Pipeline 阶段说明
+
+#### Stage 1: Test（单元测试）
+
+- **运行环境**：`python:3.11-slim` 容器
+- **执行内容**：
+  1. 安装项目依赖 `pip install -r requirements.txt`
+  2. 安装测试依赖 `pip install httpx2`
+  3. 执行 pytest 测试 `cd src/task_manager_api/tests && pytest -v`
+
+#### Stage 2: arm64_Docker_Build_Push（arm64 镜像构建与推送）
+
+- **触发条件**：参数 `ARM64 = true`
+- **运行节点**：`arm64_10.211.55.5`
+- **执行内容**：
+  1. 使用 Harbor 凭证登录镜像仓库 `hub.xiaohua99.cn:32005`
+  2. 基于 [Dockerfile](file:///Users/luyang/Documents/04_gientech/01_code/01_python/task-manager-api/Dockerfile) 构建多阶段镜像
+  3. 推送镜像到 Harbor，标签格式：`dev-arm64-{BUILD_ID}-{时间戳}`
+
+#### Stage 3: Deploy（K8s 部署）
+
+- **运行环境**：`kubesphere/kubectl:v1.22.9` 容器
+- **执行内容**：
+  1. 根据 `CLUSTERNAME` 参数选择对应架构的镜像，替换 `k8s/deployment.yaml` 中的 `image:` 字段
+  2. 通过 Jenkins 凭证获取目标集群的 kubeconfig
+  3. 执行 `kubectl apply -f k8s/` 部署全部 K8s 资源
+
+### 镜像命名规则
+
+```
+# arm64 架构
+hub.xiaohua99.cn:32005/imp-system/task-manager-api:dev-arm64-{BUILD_ID}-{YYYYMMDDHHmmss}
+
+# x86 架构
+hub.xiaohua99.cn:32005/imp-system/task-manager-api:dev-x86-{BUILD_ID}-{YYYYMMDDHHmmss}
+```
+
+### Dockerfile 多阶段构建说明
+
+| 阶段 | 基础镜像 | 作用 |
+|---|---|---|
+| **builder** | `python:3.11-slim` | 安装 Python 依赖到独立目录 `/install` |
+| **runtime** | `python:3.11-slim` | 仅复制依赖产物 + 源码，以非 root 用户 `appuser` 运行 |
+
+- 默认监听端口：`8080`（可通过环境变量 `PORT` 覆盖）
+- 启动命令：`uvicorn main:app --host 0.0.0.0 --port ${PORT}`
+
+### 部署环境映射
+
+| CLUSTERNAME | 架构 | 镜像标签 | 部署配置 |
+|---|---|---|---|
+| `10.211.55.5` | arm64 | `image_arm64` | `k8s/deployment.yaml` |
+| `10.3.5.5` | x86 | `image_x86` | `Jenkins-deploy.yaml` |
+| `hz-dev-x86` | x86 | `image_x86` | `Jenkins-deploy.yaml` |
+| `hz-test-x86` | x86 | `image_x86` | `Jenkins-deploy.yaml` |
+| `hz-dev-arm64` | arm64 | `image_arm64` | `Jenkins-deploy.yaml` |
+
+---
+
 ## 屏幕截图
 
 ### `kubectl get all -n task-manager` 输出示例
