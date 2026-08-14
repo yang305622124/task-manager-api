@@ -44,7 +44,7 @@ Task Manager API 提供完整的任务生命周期管理，包括：
 
 - Python >= 3.11
 - MySQL 数据库
-- （可选）Redis
+- （可选）Redis 可选
 
 ### 2. 克隆项目
 
